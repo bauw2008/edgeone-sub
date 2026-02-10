@@ -355,6 +355,25 @@ async function importFromSubscribe(context, id, corsHeaders) {
                 created_at: now,
                 updated_at: now
             };
+            // 根据节点类型添加特定字段
+            if (node.type === 'vless') {
+                nodeData.sni = node.sni || '';
+                nodeData.flow = node.flow || '';
+                nodeData.fp = node.fp || '';
+                nodeData.pbk = node.pbk || '';
+                nodeData.sid = node.sid !== undefined ? node.sid : '';
+            } else if (node.type === 'trojan') {
+                nodeData.sni = node.sni || '';
+                nodeData.allowInsecure = node.allowInsecure || false;
+            } else if (node.type === 'hy1' || node.type === 'hy2') {
+                nodeData.sni = node.sni || '';
+                nodeData.insecure = node.insecure || false;
+                if (node.type === 'hy1') {
+                    nodeData.upmbps = node.upmbps || '';
+                    nodeData.downmbps = node.downmbps || '';
+                    nodeData.alpn = node.alpn || '';
+                }
+            }
             existingNodes.push(nodeData);
             results.push(nodeData);
         }
@@ -421,10 +440,15 @@ function parseLink(link) {
 
         // VLESS 链接解析
         if (link.startsWith('vless://')) {
-            const url = new URL(link);
+            // 移除 URL fragment (# 及后面的内容)，避免影响 URL 解析
+            const linkWithoutFragment = link.split('#')[0];
+            const url = new URL(linkWithoutFragment);
             const params = new URLSearchParams(url.search);
+            // 从原始链接中提取 name
+            const nameMatch = link.match(/#(.+)$/);
+            const name = nameMatch ? decodeURIComponent(nameMatch[1]) : 'VLESS Node';
             return {
-                name: decodeURIComponent(url.hash.slice(1)) || 'VLESS Node',
+                name: name,
                 type: 'vless',
                 server: url.hostname,
                 port: parseInt(url.port) || 443,
@@ -432,39 +456,102 @@ function parseLink(link) {
                 network: params.get('type') || 'tcp',
                 host: params.get('host') || '',
                 path: params.get('path') || '',
-                tls: params.get('security') === 'tls'
+                tls: params.get('security') === 'tls',
+                sni: params.get('sni') || '',
+                flow: params.get('flow') || '',
+                fp: params.get('fp') || '',
+                security: params.get('security') || '',
+                pbk: params.get('pbk') || '',
+                sid: params.get('sid') || ''
             };
         }
 
         // Shadowsocks 链接解析
         if (link.startsWith('ss://')) {
-            const url = new URL(link);
-            let method = 'aes-256-gcm';
-            let password = '';
+            // 移除 URL fragment
+            const linkWithoutFragment = link.split('#')[0];
+            const nameMatch = link.match(/#(.+)$/);
+            const name = nameMatch ? decodeURIComponent(nameMatch[1]) : 'SS Node';
 
-            if (url.username) {
-                try {
-                    const decoded = base64Decode(url.username);
-                    const parts = decoded.split(':');
-                    if (parts.length >= 2) {
-                        method = parts[0];
-                        password = parts.slice(1).join(':');
-                    } else {
-                        password = decoded;
+            // 尝试两种格式
+            // 格式1: ss://base64(method:password)@server:port
+            // 格式2: ss://base64(method:password@server:port)
+            try {
+                const url = new URL(linkWithoutFragment);
+
+                // 检查是否有 @ 符号（区分格式1和格式2）
+                if (url.username) {
+                    // 格式1: ss://base64(method:password)@server:port
+                    try {
+                        const decoded = base64Decode(url.username);
+                        const parts = decoded.split(':');
+                        if (parts.length >= 2) {
+                            return {
+                                name: name,
+                                type: 'ss',
+                                server: url.hostname,
+                                port: parseInt(url.port) || 8388,
+                                password: parts.slice(1).join(':'),
+                                security: parts[0]
+                            };
+                        }
+                    } catch (e) {
+                        // 解码失败，尝试格式2
                     }
-                } catch (e) {
-                    password = decodeURIComponent(url.username);
                 }
-            }
 
-            return {
-                name: decodeURIComponent(url.hash.slice(1)) || 'SS Node',
-                type: 'ss',
-                server: url.hostname,
-                port: parseInt(url.port) || 8388,
-                password: password,
-                security: method
-            };
+                // 格式2: ss://base64(method:password@server:port)
+                // 整个认证部分都是 base64
+                const authPart = linkWithoutFragment.slice(5); // 移除 'ss://'
+                const authData = base64Decode(authPart);
+                const atIdx = authData.indexOf('@');
+                if (atIdx > 0) {
+                    const methodPassword = authData.substring(0, atIdx);
+                    const serverPort = authData.substring(atIdx + 1);
+
+                    // 解析 method:password
+                    const colonIdx = methodPassword.indexOf(':');
+                    if (colonIdx > 0) {
+                        const method = methodPassword.substring(0, colonIdx);
+                        const password = methodPassword.substring(colonIdx + 1);
+
+                        // 解析 server:port
+                        const lastColonIdx = serverPort.lastIndexOf(':');
+                        if (lastColonIdx > 0) {
+                            const server = serverPort.substring(0, lastColonIdx);
+                            const port = parseInt(serverPort.substring(lastColonIdx + 1));
+
+                            // 处理 IPv6 地址
+                            if (server.startsWith('[') && server.endsWith(']')) {
+                                return {
+                                    name: name,
+                                    type: 'ss',
+                                    server: server.slice(1, -1),
+                                    port: port,
+                                    password: password,
+                                    security: method
+                                };
+                            }
+
+                            return {
+                                name: name,
+                                type: 'ss',
+                                server: server,
+                                port: port,
+                                password: password,
+                                security: method
+                            };
+                        }
+                    }
+                }
+
+                // 所有格式都失败，返回 null
+                return null;
+
+            } catch (e) {
+                console.error('SS link parse error:', e);
+                return null;
+            }
         }
 
         // Trojan 链接解析

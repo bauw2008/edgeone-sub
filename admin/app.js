@@ -659,34 +659,90 @@ function parseLink(link) {
         
         // Shadowsocks 链接解析
         if (link.startsWith('ss://')) {
-            const url = new URL(link);
-            let method = 'aes-256-gcm';
-            let password = '';
-            
-            // 解析用户名部分（可能是 base64 编码的 method:password）
-            if (url.username) {
-                try {
-                    const decoded = Base64Tool.decode(url.username);
-                    const parts = decoded.split(':');
-                    if (parts.length >= 2) {
-                        method = parts[0];
-                        password = parts.slice(1).join(':');
-                    } else {
-                        password = decoded;
+            // 移除 URL fragment
+            const linkWithoutFragment = link.split('#')[0];
+            const nameMatch = link.match(/#(.+)$/);
+            const name = nameMatch ? decodeURIComponent(nameMatch[1]) : 'SS Node';
+
+            // 尝试两种格式
+            // 格式1: ss://base64(method:password)@server:port
+            // 格式2: ss://base64(method:password@server:port)
+            try {
+                const url = new URL(linkWithoutFragment);
+
+                // 检查是否有 @ 符号（区分格式1和格式2）
+                if (url.username) {
+                    // 格式1: ss://base64(method:password)@server:port
+                    try {
+                        const decoded = Base64Tool.decode(url.username);
+                        const parts = decoded.split(':');
+                        if (parts.length >= 2) {
+                            return {
+                                name: name,
+                                type: 'ss',
+                                server: url.hostname,
+                                port: parseInt(url.port) || 8388,
+                                password: parts.slice(1).join(':'),
+                                security: parts[0]
+                            };
+                        }
+                    } catch (e) {
+                        // 解码失败，尝试格式2
                     }
-                } catch (e) {
-                    password = decodeURIComponent(url.username);
                 }
+
+                // 格式2: ss://base64(method:password@server:port)
+                // 整个认证部分都是 base64
+                const authPart = linkWithoutFragment.slice(5); // 移除 'ss://'
+                const authData = Base64Tool.decode(authPart);
+                const atIdx = authData.indexOf('@');
+                if (atIdx > 0) {
+                    const methodPassword = authData.substring(0, atIdx);
+                    const serverPort = authData.substring(atIdx + 1);
+
+                    // 解析 method:password
+                    const colonIdx = methodPassword.indexOf(':');
+                    if (colonIdx > 0) {
+                        const method = methodPassword.substring(0, colonIdx);
+                        const password = methodPassword.substring(colonIdx + 1);
+
+                        // 解析 server:port
+                        const lastColonIdx = serverPort.lastIndexOf(':');
+                        if (lastColonIdx > 0) {
+                            const server = serverPort.substring(0, lastColonIdx);
+                            const port = parseInt(serverPort.substring(lastColonIdx + 1));
+
+                            // 处理 IPv6 地址
+                            if (server.startsWith('[') && server.endsWith(']')) {
+                                return {
+                                    name: name,
+                                    type: 'ss',
+                                    server: server.slice(1, -1),
+                                    port: port,
+                                    password: password,
+                                    security: method
+                                };
+                            }
+
+                            return {
+                                name: name,
+                                type: 'ss',
+                                server: server,
+                                port: port,
+                                password: password,
+                                security: method
+                            };
+                        }
+                    }
+                }
+
+                // 所有格式都失败，返回 null
+                return null;
+
+            } catch (e) {
+                console.error('SS link parse error:', e);
+                return null;
             }
-            
-            return {
-                name: decodeURIComponent(url.hash.slice(1)) || 'SS Node',
-                type: 'ss',
-                server: url.hostname,
-                port: parseInt(url.port) || 8388,
-                password: password,
-                security: method
-            };
         }
         
         // Trojan 链接解析
