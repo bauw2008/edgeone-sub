@@ -301,10 +301,29 @@ const LinkGenerator = {
         if (node.host) {
             params.push(`host=${encodeURIComponent(node.host)}`);
         }
-        if (node.tls) {
+        if (node.sni) {
+            params.push(`sni=${encodeURIComponent(node.sni)}`);
+        }
+        if (node.flow) {
+            params.push(`flow=${encodeURIComponent(node.flow)}`);
+        }
+        if (node.fp) {
+            params.push(`fp=${encodeURIComponent(node.fp)}`);
+        }
+        if (node.security) {
+            params.push(`security=${encodeURIComponent(node.security)}`);
+        }
+        if (node.pbk) {
+            params.push(`pbk=${encodeURIComponent(node.pbk)}`);
+        }
+        if (node.sid !== undefined) {
+            params.push(`sid=${encodeURIComponent(node.sid)}`);
+        }
+        if (node.tls && !node.security) {
             params.push('security=tls');
         }
-        return `vless://${node.password}@${node.server}:${node.port}?${params.join('&')}#${encodeURIComponent(node.name)}`;
+        const paramStr = params.length > 0 ? `/?${params.join('&')}` : '';
+        return `vless://${node.password}@${node.server}:${node.port}${paramStr}#${encodeURIComponent(node.name)}`;
     },
     
     ss(node) {
