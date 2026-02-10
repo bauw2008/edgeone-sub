@@ -1,0 +1,25 @@
+# EdgeOne Pages 配置说明
+# 此文件仅供参考，EdgeOne Pages 不使用 wrangler.toml
+
+# 需要在 EdgeOne 控制台配置：
+# 1. KV 存储命名空间，绑定变量名：NODES_KV
+#    - Key: nodes_data -> 存储节点数据（聚合）
+#    - Key: subscribelinks_data -> 存储订阅链接数据（聚合）
+# 2. 环境变量：ADMIN_PASSWORD（管理员密码）
+# 3. 环境变量：CLASH_CONVERT_API（可选，默认使用 v2ray2clash.netlify.app）
+
+# Edge Functions 目录结构：
+# edge-functions/
+# ├── api/
+# │   ├── nodes.js              # 节点管理 API
+# │   ├── subscribe.js          # 订阅服务
+# │   ├── subscribe-links.js    # 订阅链接管理 API
+# │   └── auth/login.js         # 认证服务
+# └── import-nodes.js           # 数据导入工具
+
+# API 路由（基于文件结构）：
+# /api/nodes                  -> edge-functions/api/nodes.js
+# /api/subscribe              -> edge-functions/api/subscribe.js
+# /api/subscribe-links        -> edge-functions/api/subscribe-links.js
+# /api/auth/login             -> edge-functions/api/auth/login.js
+# /import-nodes               -> edge-functions/import-nodes.js
