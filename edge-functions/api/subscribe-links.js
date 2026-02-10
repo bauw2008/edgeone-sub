@@ -440,29 +440,18 @@ function parseLink(link) {
 
 // VLESS 链接解析
         if (link.startsWith('vless://')) {
-            // 智能处理 fragment：只有在 # 后面跟着的是可读的名称时才视为 fragment
-            // 如果 # 在 & 后面且参数中没有明确的 name，那可能是参数值的一部分
+            // 提取节点名称（最后一个 # 后面的内容）
             let name = 'VLESS Node';
+            const lastHashIndex = link.lastIndexOf('#');
             let linkWithoutFragment = link;
 
-            // 检查是否包含 fragment，且 fragment 不是参数值的一部分
-            const hashIndex = link.indexOf('#', 8); // 从 vless:// 之后开始查找
-            if (hashIndex > 0) {
-                // 检查 # 前面是否有 = (参数分隔符)
-                const beforeHash = link.substring(0, hashIndex);
-                const lastEqualsIndex = beforeHash.lastIndexOf('=');
-                const lastAmpersandIndex = beforeHash.lastIndexOf('&');
-
-                // 如果 # 前面最近的是 & 或 ?，说明这是参数值的一部分，不是 fragment
-                // 如果 # 前面最近的是 =，说明这是 fragment（节点名称）
-                const isFragment = lastEqualsIndex > lastAmpersandIndex && lastAmpersandIndex >= 0;
-
-                if (isFragment) {
-                    linkWithoutFragment = link.substring(0, hashIndex);
-                    const fragment = link.substring(hashIndex + 1);
-                    if (fragment && fragment.length > 0 && fragment.indexOf('=') === -1) {
-                        name = decodeURIComponent(fragment);
-                    }
+            if (lastHashIndex > 0) {
+                const fragment = link.substring(lastHashIndex + 1);
+                // 只有当 fragment 不包含 = 时，才认为是节点名称
+                // 如果包含 =，说明这是参数值的一部分（如 sid=#JP-KDDI-）
+                if (fragment.indexOf('=') === -1) {
+                    name = decodeURIComponent(fragment);
+                    linkWithoutFragment = link.substring(0, lastHashIndex);
                 }
             }
 
