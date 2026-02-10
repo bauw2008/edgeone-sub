@@ -653,15 +653,21 @@ function parseLink(link) {
                     const beforeHash = link.substring(0, lastHashIndex);
                     const fragment = link.substring(lastHashIndex + 1);
                     
-                    // 只有当 # 前面是 ? 或 & 时，才是节点名称
-                    // 如果 # 前面是 =，说明这是参数值的一部分
-                    const lastChar = beforeHash.charAt(beforeHash.length - 1);
-                    if (lastChar === '?' || lastChar === '&') {
-                        // 这是节点名称
+                    // 判断 # 后面是否是节点名称：
+                    // 如果 # 前面最近的是 =，且 # 后面不包含 =，则 # 后面是参数值
+                    // 否则 # 后面是节点名称
+                    const lastEqIndex = beforeHash.lastIndexOf('=');
+                    const lastAmpersandIndex = beforeHash.lastIndexOf('&');
+                    const questionPos = beforeHash.indexOf('?');
+                    
+                    // 如果最后一个 = 在最后一个 & 之后，且最后一个 & 在 ? 之后
+                    // 说明 # 后面是节点名称
+                    const isFragment = lastEqIndex > lastAmpersandIndex && lastAmpersandIndex >= questionPos;
+                    
+                    if (isFragment) {
                         name = decodeURIComponent(fragment);
                         queryString = link.substring(questionIndex + 1, lastHashIndex);
                     } else {
-                        // 这是参数值的一部分，解析到末尾
                         queryString = link.substring(questionIndex + 1);
                     }
                 } else {
