@@ -344,11 +344,53 @@ const LinkGenerator = {
         if (node.host) {
             params.push(`host=${encodeURIComponent(node.host)}`);
         }
+        if (node.sni) {
+            params.push(`sni=${encodeURIComponent(node.sni)}`);
+        }
+        if (node.allowInsecure) {
+            params.push('allowInsecure=1');
+        }
         if (node.tls) {
             params.push('security=tls');
         }
-        const paramStr = params.length > 0 ? `?${params.join('&')}` : '';
+        const paramStr = params.length > 0 ? `/?${params.join('&')}` : '';
         return `trojan://${node.password}@${node.server}:${node.port}${paramStr}#${encodeURIComponent(node.name)}`;
+    },
+    
+    hy1(node) {
+        let params = [];
+        if (node.password) {
+            params.push(`auth=${encodeURIComponent(node.password)}`);
+        }
+        if (node.insecure) {
+            params.push('insecure=1');
+        }
+        if (node.sni || node.host) {
+            params.push(`peer=${encodeURIComponent(node.sni || node.host)}`);
+        }
+        if (node.upmbps) {
+            params.push(`upmbps=${node.upmbps}`);
+        }
+        if (node.downmbps) {
+            params.push(`downmbps=${node.downmbps}`);
+        }
+        if (node.alpn) {
+            params.push(`alpn=${node.alpn}`);
+        }
+        const paramStr = params.length > 0 ? `/?${params.join('&')}` : '';
+        return `hysteria://${node.server}:${node.port}${paramStr}#${encodeURIComponent(node.name)}`;
+    },
+    
+    hy2(node) {
+        let params = [];
+        if (node.insecure) {
+            params.push('insecure=1');
+        }
+        if (node.sni) {
+            params.push(`sni=${encodeURIComponent(node.sni)}`);
+        }
+        const paramStr = params.length > 0 ? `/?${params.join('&')}` : '';
+        return `hy2://${node.password}@${node.server}:${node.port}${paramStr}#${encodeURIComponent(node.name)}`;
     },
     
     generate(node) {
@@ -502,7 +544,13 @@ function parseLink(link) {
                 network: params.get('type') || 'tcp',
                 host: params.get('host') || '',
                 path: params.get('path') || '',
-                tls: params.get('security') === 'tls'
+                tls: params.get('security') === 'tls',
+                sni: params.get('sni') || '',
+                flow: params.get('flow') || '',
+                fp: params.get('fp') || '',
+                security: params.get('security') || '',
+                pbk: params.get('pbk') || '',
+                sid: params.get('sid') || ''
             };
         }
         
@@ -551,7 +599,9 @@ function parseLink(link) {
                 network: params.get('type') || 'tcp',
                 host: params.get('host') || '',
                 path: params.get('path') || '',
-                tls: params.get('security') === 'tls' || true  // Trojan 默认启用 TLS
+                tls: params.get('security') === 'tls',
+                sni: params.get('sni') || '',
+                allowInsecure: params.get('allowInsecure') === '1'
             };
         }
 
@@ -564,12 +614,14 @@ function parseLink(link) {
                 type: 'hy1',
                 server: url.hostname,
                 port: parseInt(url.port) || 443,
-                password: url.username,
+                password: params.get('auth') || url.username || '',
                 protocol: params.get('protocol') || 'udp',
                 obfs: params.get('obfs') || 'plain',
-                auth: params.get('auth') || '',
-                insecure: params.get('peer') ? true : false,
-                sni: params.get('peer') || params.get('sni') || ''
+                insecure: params.get('insecure') === '1',
+                sni: params.get('peer') || params.get('sni') || '',
+                upmbps: params.get('upmbps') || '',
+                downmbps: params.get('downmbps') || '',
+                alpn: params.get('alpn') || ''
             };
         }
 
