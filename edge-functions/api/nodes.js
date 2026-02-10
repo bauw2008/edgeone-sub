@@ -132,17 +132,7 @@ export async function onRequestPost(context) {
                         const id = crypto.randomUUID();
                         const nodeData = {
                             id,
-                            name: node.name,
-                            type: node.type,
-                            server: node.server,
-                            port: node.port,
-                            password: node.password,
-                            network: node.network || 'tcp',
-                            tls: node.tls || false,
-                            host: node.host || '',
-                            path: node.path || '',
-                            aid: node.aid || 0,
-                            security: node.security || 'aes-256-gcm',
+                            ...node,
                             created_at: now,
                             updated_at: now
                         };
@@ -162,17 +152,7 @@ export async function onRequestPost(context) {
         const id = crypto.randomUUID();
         const nodeData = {
             id,
-            name: data.name,
-            type: data.type,
-            server: data.server,
-            port: data.port,
-            password: data.password,
-            network: data.network || 'tcp',
-            tls: data.tls || false,
-            host: data.host || '',
-            path: data.path || '',
-            aid: data.aid || 0,
-            security: data.security || 'aes-256-gcm',
+            ...data,
             created_at: now,
             updated_at: now
         };
@@ -386,6 +366,24 @@ function generateLink(node) {
             if (node.host) {
                 params.push(`host=${encodeURIComponent(node.host)}`);
             }
+            if (node.sni) {
+                params.push(`sni=${encodeURIComponent(node.sni)}`);
+            }
+            if (node.flow) {
+                params.push(`flow=${encodeURIComponent(node.flow)}`);
+            }
+            if (node.fp) {
+                params.push(`fp=${encodeURIComponent(node.fp)}`);
+            }
+            if (node.security) {
+                params.push(`security=${encodeURIComponent(node.security)}`);
+            }
+            if (node.pbk) {
+                params.push(`pbk=${encodeURIComponent(node.pbk)}`);
+            }
+            if (node.sid) {
+                params.push(`sid=${encodeURIComponent(node.sid)}`);
+            }
             if (node.tls) {
                 params.push('security=tls');
             }
@@ -422,7 +420,7 @@ function generateLink(node) {
             if (node.sni) {
                 params.push(`sni=${encodeURIComponent(node.sni)}`);
             }
-            const paramStr = params.length > 0 ? `?${params.join('&')}` : '';
+            const paramStr = params.length > 0 ? `/?${params.join('&')}` : '';
             return `hy2://${node.password}@${node.server}:${node.port}${paramStr}#${encodeURIComponent(node.name)}`;
         }
         case 'hysteria':
@@ -446,7 +444,7 @@ function generateLink(node) {
             if (node.alpn) {
                 params.push(`alpn=${node.alpn}`);
             }
-            const paramStr = params.length > 0 ? `?${params.join('&')}` : '';
+            const paramStr = params.length > 0 ? `/?${params.join('&')}` : '';
             return `hysteria://${node.server}:${node.port}${paramStr}#${encodeURIComponent(node.name)}`;
         }
         default:
