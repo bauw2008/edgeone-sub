@@ -208,14 +208,45 @@ function parseLink(link) {
 
         // Hysteria2
         if (link.startsWith('hy2://') || link.startsWith('hysteria2://')) {
-            const url = new URL(link.replace('hy2://', 'hysteria2://'));
-            const params = new URLSearchParams(url.search);
+            // hy2://password@server:port/?insecure=1&sni=xxx#name
+            const protocol = link.startsWith('hy2://') ? 'hy2://' : 'hysteria2://';
+            const linkWithoutProtocol = link.slice(protocol.length);
+            
+            // 分离查询参数和哈希
+            const hashIndex = linkWithoutProtocol.indexOf('#');
+            const pathAndQuery = hashIndex >= 0 ? linkWithoutProtocol.slice(0, hashIndex) : linkWithoutProtocol;
+            const hash = hashIndex >= 0 ? decodeURIComponent(linkWithoutProtocol.slice(hashIndex + 1)) : 'Hysteria2 Node';
+            
+            // 分离认证信息和路径
+            const atIndex = pathAndQuery.indexOf('@');
+            if (atIndex === -1) return null;
+            
+            const authPart = pathAndQuery.slice(0, atIndex);
+            const serverPart = pathAndQuery.slice(atIndex + 1);
+            
+            // 分离密码和认证信息（可能为空）
+            const password = authPart || '';
+            
+            // 分离服务器和端口与查询参数
+            const queryIndex = serverPart.indexOf('?');
+            const serverAndPort = queryIndex >= 0 ? serverPart.slice(0, queryIndex) : serverPart;
+            const queryString = queryIndex >= 0 ? serverPart.slice(queryIndex + 1) : '';
+            
+            // 解析服务器和端口
+            const lastColon = serverAndPort.lastIndexOf(':');
+            if (lastColon === -1) return null;
+            const server = serverAndPort.slice(0, lastColon);
+            const port = parseInt(serverAndPort.slice(lastColon + 1)) || 443;
+            
+            // 解析查询参数
+            const params = new URLSearchParams(queryString);
+            
             return {
-                name: decodeURIComponent(url.hash.slice(1)) || 'Hysteria2 Node',
+                name: hash || 'Hysteria2 Node',
                 type: 'hysteria2',
-                server: url.hostname,
-                port: parseInt(url.port) || 443,
-                password: url.username,
+                server,
+                port,
+                password,
                 network: 'udp',
                 host: params.get('sni') || '',
                 path: '',
@@ -226,13 +257,33 @@ function parseLink(link) {
 
         // Hysteria1
         if (link.startsWith('hysteria://')) {
-            const url = new URL(link);
-            const params = new URLSearchParams(url.search);
+            // hysteria://server:port/?insecure=1&peer=xxx&auth=password&upmbps=100&downmbps=100&alpn=h3#name
+            const linkWithoutProtocol = link.slice('hysteria://'.length);
+            
+            // 分离查询参数和哈希
+            const hashIndex = linkWithoutProtocol.indexOf('#');
+            const pathAndQuery = hashIndex >= 0 ? linkWithoutProtocol.slice(0, hashIndex) : linkWithoutProtocol;
+            const hash = hashIndex >= 0 ? decodeURIComponent(linkWithoutProtocol.slice(hashIndex + 1)) : 'Hysteria Node';
+            
+            // 分离服务器和端口与查询参数
+            const queryIndex = pathAndQuery.indexOf('?');
+            const serverAndPort = queryIndex >= 0 ? pathAndQuery.slice(0, queryIndex) : pathAndQuery;
+            const queryString = queryIndex >= 0 ? pathAndQuery.slice(queryIndex + 1) : '';
+            
+            // 解析服务器和端口
+            const lastColon = serverAndPort.lastIndexOf(':');
+            if (lastColon === -1) return null;
+            const server = serverAndPort.slice(0, lastColon);
+            const port = parseInt(serverAndPort.slice(lastColon + 1)) || 443;
+            
+            // 解析查询参数
+            const params = new URLSearchParams(queryString);
+            
             return {
-                name: decodeURIComponent(url.hash.slice(1)) || 'Hysteria Node',
+                name: hash || 'Hysteria Node',
                 type: 'hysteria',
-                server: url.hostname,
-                port: parseInt(url.port) || 443,
+                server,
+                port,
                 password: params.get('auth') || '',
                 network: 'udp',
                 host: params.get('peer') || params.get('sni') || '',
