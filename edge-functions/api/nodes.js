@@ -413,6 +413,34 @@ function generateLink(node) {
             const paramStr = params.length > 0 ? `?${params.join('&')}` : '';
             return `trojan://${node.password}@${node.server}:${node.port}${paramStr}#${encodeURIComponent(node.name)}`;
         }
+        case 'hysteria2': {
+            let params = [];
+            if (node.host) {
+                params.push(`sni=${encodeURIComponent(node.host)}`);
+            }
+            if (node.path) {
+                params.push(`path=${encodeURIComponent(node.path)}`);
+            }
+            if (node.tls) {
+                params.push('security=tls');
+            }
+            const paramStr = params.length > 0 ? `?${params.join('&')}` : '';
+            return `hysteria2://${node.password}@${node.server}:${node.port}${paramStr}#${encodeURIComponent(node.name)}`;
+        }
+        case 'hysteria': {
+            let params = [];
+            if (node.host) {
+                params.push(`sni=${encodeURIComponent(node.host)}`);
+            }
+            if (node.path) {
+                params.push(`path=${encodeURIComponent(node.path)}`);
+            }
+            if (node.tls) {
+                params.push('security=tls');
+            }
+            const paramStr = params.length > 0 ? `?${params.join('&')}` : '';
+            return `hysteria://${node.password}@${node.server}:${node.port}${paramStr}#${encodeURIComponent(node.name)}`;
+        }
         default:
             return '';
     }
