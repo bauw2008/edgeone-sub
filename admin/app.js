@@ -643,13 +643,19 @@ function parseLink(link) {
 
             // 提取参数字符串和节点名称
             const questionIndex = link.indexOf('?');
+            const hashIndex = link.lastIndexOf('#');
             let queryString = '';
             let name = 'VLESS Node';
 
             if (questionIndex > 0) {
-                // 对于非标准 VLESS 链接（参数值中包含 #），直接解析到末尾
-                // 不处理 fragment，因为无法可靠区分节点名称和参数值中的 #
-                queryString = link.substring(questionIndex + 1);
+                // 参数在 ? 和 # 之间（如果有 #）或到末尾
+                const endIndex = hashIndex > questionIndex ? hashIndex : link.length;
+                queryString = link.substring(questionIndex + 1, endIndex);
+            }
+
+            // 提取节点名称（# 后面的部分）
+            if (hashIndex > 0 && hashIndex > questionIndex) {
+                name = decodeURIComponent(link.substring(hashIndex + 1));
             }
 
             // 解析参数
