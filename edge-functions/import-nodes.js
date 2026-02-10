@@ -208,8 +208,9 @@ function parseLink(link) {
                 network: params.get('type') || 'tcp',
                 host: params.get('host') || '',
                 path: params.get('path') || '',
-                tls: params.get('security') === 'tls' || true,
-                sni: params.get('sni') || ''
+                tls: params.get('security') === 'tls',
+                sni: params.get('sni') || '',
+                allowInsecure: params.get('allowInsecure') === '1'
             };
         }
 

@@ -175,7 +175,8 @@ function generateLink(node) {
             if (node.tls && !node.security) {
                 params.push('security=tls');
             }
-            return `vless://${node.password}@${node.server}:${node.port}?${params.join('&')}#${encodeURIComponent(node.name)}`;
+            const paramStr = params.length > 0 ? `/?${params.join('&')}` : '';
+            return `vless://${node.password}@${node.server}:${node.port}${paramStr}#${encodeURIComponent(node.name)}`;
         }
         case 'ss': {
             const method = node.security || 'aes-256-gcm';
@@ -196,12 +197,13 @@ function generateLink(node) {
             if (node.sni) {
                 params.push(`sni=${encodeURIComponent(node.sni)}`);
             }
-            if (!node.tls) {
-                params.push('security=tls');
-            } else {
+            if (node.allowInsecure) {
+                params.push('allowInsecure=1');
+            }
+            if (node.tls) {
                 params.push('security=tls');
             }
-            const paramStr = params.length > 0 ? `?${params.join('&')}` : '';
+            const paramStr = params.length > 0 ? `/?${params.join('&')}` : '';
             return `trojan://${node.password}@${node.server}:${node.port}${paramStr}#${encodeURIComponent(node.name)}`;
         }
         case 'hy2':
