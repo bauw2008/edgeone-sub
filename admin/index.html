@@ -283,13 +283,19 @@
                 <!-- 协议特定设置 -->
                 <div class="mb-6">
                     <h3 class="text-sm font-semibold text-gray-600 mb-3 uppercase tracking-wide">协议特定设置</h3>
-                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                        <div class="vmess-only">
-                            <label for="nodeAid" class="block text-gray-700 text-sm font-medium mb-1">Alter ID (VMess)</label>
+                    
+                    <!-- VMess 字段 -->
+                    <div id="vmessFields" class="grid grid-cols-1 md:grid-cols-2 gap-4 hidden">
+                        <div class="md:col-span-2">
+                            <label for="nodeAid" class="block text-gray-700 text-sm font-medium mb-1">Alter ID</label>
                             <input type="number" id="nodeAid" value="0" min="0" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500">
                         </div>
-                        <div class="ss-only hidden">
-                            <label for="nodeSecurity" class="block text-gray-700 text-sm font-medium mb-1">加密方法 (Shadowsocks)</label>
+                    </div>
+                    
+                    <!-- Shadowsocks 字段 -->
+                    <div id="ssFields" class="grid grid-cols-1 md:grid-cols-2 gap-4 hidden">
+                        <div class="md:col-span-2">
+                            <label for="nodeSecurity" class="block text-gray-700 text-sm font-medium mb-1">加密方法</label>
                             <select id="nodeSecurity" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500">
                                 <option value="aes-256-gcm">aes-256-gcm</option>
                                 <option value="aes-128-gcm">aes-128-gcm</option>
@@ -297,66 +303,82 @@
                                 <option value="none">none</option>
                             </select>
                         </div>
-                        <div class="vless-only hidden">
-                            <label for="nodeSni" class="block text-gray-700 text-sm font-medium mb-1">SNI (VLESS)</label>
+                    </div>
+                    
+                    <!-- VLESS 字段 -->
+                    <div id="vlessFields" class="grid grid-cols-1 md:grid-cols-2 gap-4 hidden">
+                        <div>
+                            <label for="nodeSni" class="block text-gray-700 text-sm font-medium mb-1">SNI</label>
                             <input type="text" id="nodeSni" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500" placeholder="example.com">
                         </div>
-                        <div class="vless-only hidden">
-                            <label for="nodeFlow" class="block text-gray-700 text-sm font-medium mb-1">Flow (VLESS)</label>
-                            <input type="text" id="nodeFlow" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500" placeholder="xtls-rprx-vision">
+                        <div>
+                            <label for="nodeFlow" class="block text-gray-700 text-sm font-medium mb-1">Flow</label>
+                            <input type="text" id="nodeFlow" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500" placeholder="xtls-rprx-vision 或 #SGP">
                         </div>
-                        <div class="vless-only hidden">
-                            <label for="nodeFp" class="block text-gray-700 text-sm font-medium mb-1">Fingerprint (VLESS)</label>
+                        <div>
+                            <label for="nodeFp" class="block text-gray-700 text-sm font-medium mb-1">Fingerprint</label>
                             <input type="text" id="nodeFp" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500" placeholder="chrome">
                         </div>
-                        <div class="vless-only hidden">
-                            <label for="nodeVlessSecurity" class="block text-gray-700 text-sm font-medium mb-1">Security (VLESS)</label>
-                            <input type="text" id="nodeVlessSecurity" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500" placeholder="tls/reality">
+                        <div>
+                            <label for="nodeVlessSecurity" class="block text-gray-700 text-sm font-medium mb-1">Security</label>
+                            <input type="text" id="nodeVlessSecurity" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500" placeholder="tls 或 reality">
                         </div>
-                        <div class="vless-only hidden">
-                            <label for="nodePbk" class="block text-gray-700 text-sm font-medium mb-1">Public Key (VLESS Reality)</label>
+                        <div>
+                            <label for="nodePbk" class="block text-gray-700 text-sm font-medium mb-1">Public Key (Reality)</label>
                             <input type="text" id="nodePbk" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500">
                         </div>
-                        <div class="vless-only hidden">
-                            <label for="nodeSid" class="block text-gray-700 text-sm font-medium mb-1">Short ID (VLESS Reality)</label>
-                            <input type="text" id="nodeSid" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500">
+                        <div>
+                            <label for="nodeSid" class="block text-gray-700 text-sm font-medium mb-1">Short ID (Reality)</label>
+                            <input type="text" id="nodeSid" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500" placeholder="#SGP">
                         </div>
-                        <div class="trojan-only hidden">
-                            <label for="nodeTrojanSni" class="block text-gray-700 text-sm font-medium mb-1">SNI (Trojan)</label>
+                    </div>
+                    
+                    <!-- Trojan 字段 -->
+                    <div id="trojanFields" class="grid grid-cols-1 md:grid-cols-2 gap-4 hidden">
+                        <div>
+                            <label for="nodeTrojanSni" class="block text-gray-700 text-sm font-medium mb-1">SNI</label>
                             <input type="text" id="nodeTrojanSni" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500">
                         </div>
-                        <div class="trojan-only hidden">
+                        <div class="flex items-end">
                             <label class="flex items-center h-10 px-3 border border-gray-300 rounded-lg">
                                 <input type="checkbox" id="nodeAllowInsecure" class="w-4 h-4 text-blue-600">
-                                <span class="ml-2 text-sm text-gray-600">Allow Insecure (Trojan)</span>
+                                <span class="ml-2 text-sm text-gray-600">Allow Insecure</span>
                             </label>
                         </div>
-                        <div class="hy1-only hidden">
-                            <label class="flex items-center h-10 px-3 border border-gray-300 rounded-lg">
-                                <input type="checkbox" id="nodeHyInsecure" class="w-4 h-4 text-blue-600">
-                                <span class="ml-2 text-sm text-gray-600">Insecure (Hysteria)</span>
-                            </label>
-                        </div>
-                        <div class="hy1-only hidden">
-                            <label for="nodeUpmbps" class="block text-gray-700 text-sm font-medium mb-1">Up Mbps (Hysteria1)</label>
+                    </div>
+                    
+                    <!-- Hysteria1 字段 -->
+                    <div id="hy1Fields" class="grid grid-cols-1 md:grid-cols-2 gap-4 hidden">
+                        <div>
+                            <label for="nodeUpmbps" class="block text-gray-700 text-sm font-medium mb-1">Up Mbps</label>
                             <input type="number" id="nodeUpmbps" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500">
                         </div>
-                        <div class="hy1-only hidden">
-                            <label for="nodeDownmbps" class="block text-gray-700 text-sm font-medium mb-1">Down Mbps (Hysteria1)</label>
+                        <div>
+                            <label for="nodeDownmbps" class="block text-gray-700 text-sm font-medium mb-1">Down Mbps</label>
                             <input type="number" id="nodeDownmbps" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500">
                         </div>
-                        <div class="hy1-only hidden">
-                            <label for="nodeAlpn" class="block text-gray-700 text-sm font-medium mb-1">ALPN (Hysteria1)</label>
+                        <div>
+                            <label for="nodeAlpn" class="block text-gray-700 text-sm font-medium mb-1">ALPN</label>
                             <input type="text" id="nodeAlpn" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500" placeholder="h3">
                         </div>
-                        <div class="hy2-only hidden">
-                            <label for="nodeHy2Sni" class="block text-gray-700 text-sm font-medium mb-1">SNI (Hysteria2)</label>
+                        <div class="flex items-end">
+                            <label class="flex items-center h-10 px-3 border border-gray-300 rounded-lg">
+                                <input type="checkbox" id="nodeHyInsecure" class="w-4 h-4 text-blue-600">
+                                <span class="ml-2 text-sm text-gray-600">Insecure</span>
+                            </label>
+                        </div>
+                    </div>
+                    
+                    <!-- Hysteria2 字段 -->
+                    <div id="hy2Fields" class="grid grid-cols-1 md:grid-cols-2 gap-4 hidden">
+                        <div>
+                            <label for="nodeHy2Sni" class="block text-gray-700 text-sm font-medium mb-1">SNI</label>
                             <input type="text" id="nodeHy2Sni" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500">
                         </div>
-                        <div class="hy2-only hidden">
+                        <div class="flex items-end">
                             <label class="flex items-center h-10 px-3 border border-gray-300 rounded-lg">
                                 <input type="checkbox" id="nodeHy2Insecure" class="w-4 h-4 text-blue-600">
-                                <span class="ml-2 text-sm text-gray-600">Insecure (Hysteria2)</span>
+                                <span class="ml-2 text-sm text-gray-600">Insecure</span>
                             </label>
                         </div>
                     </div>
@@ -444,20 +466,27 @@
         // 节点类型切换时更新表单显示
         document.getElementById('nodeType')?.addEventListener('change', function() {
             const type = this.value;
-            const vmessFields = document.querySelector('.vmess-only');
-            const ssFields = document.querySelector('.ss-only');
-            const vlessFields = document.querySelector('.vless-only');
-            const trojanFields = document.querySelector('.trojan-only');
-            const hy1Fields = document.querySelector('.hy1-only');
-            const hy2Fields = document.querySelector('.hy2-only');
             
-            if (vmessFields) vmessFields.style.display = type === 'vmess' ? 'block' : 'none';
-            if (ssFields) ssFields.style.display = type === 'ss' ? 'block' : 'none';
-            if (vlessFields) vlessFields.style.display = type === 'vless' ? 'block' : 'none';
-            if (trojanFields) trojanFields.style.display = type === 'trojan' ? 'block' : 'none';
-            if (hy1Fields) hy1Fields.style.display = type === 'hy1' ? 'block' : 'none';
-            if (hy2Fields) hy2Fields.style.display = type === 'hy2' ? 'block' : 'none';
+            // 隐藏所有协议特定字段
+            document.getElementById('vmessFields').classList.add('hidden');
+            document.getElementById('ssFields').classList.add('hidden');
+            document.getElementById('vlessFields').classList.add('hidden');
+            document.getElementById('trojanFields').classList.add('hidden');
+            document.getElementById('hy1Fields').classList.add('hidden');
+            document.getElementById('hy2Fields').classList.add('hidden');
+            
+            // 显示对应协议的字段
+            const fieldsId = type + 'Fields';
+            const fields = document.getElementById(fieldsId);
+            if (fields) {
+                fields.classList.remove('hidden');
+            }
         });
+        
+        // 初始化时触发一次，显示默认类型的字段
+        if (document.getElementById('nodeType')) {
+            document.getElementById('nodeType').dispatchEvent(new Event('change'));
+        }
     </script>
 </body>
 </html>

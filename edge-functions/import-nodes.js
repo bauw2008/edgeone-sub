@@ -151,33 +151,41 @@ function parseLink(link) {
             const server = basicMatch[2];
             const port = parseInt(basicMatch[3]);
 
-            // 提取节点名称和判断参数结束位置
+            // 提取参数字符串和节点名称
+            const questionIndex = link.indexOf('?');
+            let queryString = '';
             let name = 'VLESS Node';
-            let paramsEndIndex = link.length;
-            const lastHashIndex = link.lastIndexOf('#');
 
-            if (lastHashIndex > 0) {
-                const fragment = link.substring(lastHashIndex + 1);
-                // 只有当 # 后面不包含 = 时，才是节点名称
-                if (fragment.indexOf('=') === -1) {
-                    name = decodeURIComponent(fragment);
-                    paramsEndIndex = lastHashIndex;
+            if (questionIndex > 0) {
+                // 检查最后一个 # 是否是节点名称
+                const lastHashIndex = link.lastIndexOf('#');
+                if (lastHashIndex > 0) {
+                    const beforeHash = link.substring(0, lastHashIndex);
+                    const fragment = link.substring(lastHashIndex + 1);
+                    
+                    // 只有当 # 前面是 ? 或 & 时，才是节点名称
+                    // 如果 # 前面是 =，说明这是参数值的一部分
+                    const lastChar = beforeHash.charAt(beforeHash.length - 1);
+                    if (lastChar === '?' || lastChar === '&') {
+                        // 这是节点名称
+                        name = decodeURIComponent(fragment);
+                        queryString = link.substring(questionIndex + 1, lastHashIndex);
+                    } else {
+                        // 这是参数值的一部分，解析到末尾
+                        queryString = link.substring(questionIndex + 1);
+                    }
+                } else {
+                    queryString = link.substring(questionIndex + 1);
                 }
-                // 如果 # 后面包含 =，说明是参数值的一部分，不作为结束位置
             }
 
             // 解析参数
-            const questionIndex = link.indexOf('?');
-            const params: Record<string, string> = {};
-
-            if (questionIndex > 0) {
-                const queryString = link.substring(questionIndex + 1, paramsEndIndex);
-
-                // 简单按 & 分割参数
+            const params = {};
+            if (queryString) {
                 const pairs = queryString.split('&');
                 for (const pair of pairs) {
                     const eqIndex = pair.indexOf('=');
-                    if (eqIndex > 0) {
+                    if (eqIndex >= 0) {
                         const key = pair.substring(0, eqIndex);
                         const value = decodeURIComponent(pair.substring(eqIndex + 1));
                         params[key] = value;
