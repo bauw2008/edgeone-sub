@@ -206,12 +206,12 @@ function parseLink(link) {
             };
         }
 
-        // Hysteria/Hysteria2
-        if (link.startsWith('hysteria://') || link.startsWith('hysteria2://')) {
-            const url = new URL(link);
+        // Hysteria2
+        if (link.startsWith('hy2://') || link.startsWith('hysteria2://')) {
+            const url = new URL(link.replace('hy2://', 'hysteria2://'));
             const params = new URLSearchParams(url.search);
             return {
-                name: decodeURIComponent(url.hash.slice(1)) || 'Hysteria Node',
+                name: decodeURIComponent(url.hash.slice(1)) || 'Hysteria2 Node',
                 type: 'hysteria2',
                 server: url.hostname,
                 port: parseInt(url.port) || 443,
@@ -219,7 +219,29 @@ function parseLink(link) {
                 network: 'udp',
                 host: params.get('sni') || '',
                 path: '',
-                tls: params.get('security') === 'tls'
+                insecure: params.get('insecure') === '1',
+                sni: params.get('sni') || ''
+            };
+        }
+
+        // Hysteria1
+        if (link.startsWith('hysteria://')) {
+            const url = new URL(link);
+            const params = new URLSearchParams(url.search);
+            return {
+                name: decodeURIComponent(url.hash.slice(1)) || 'Hysteria Node',
+                type: 'hysteria',
+                server: url.hostname,
+                port: parseInt(url.port) || 443,
+                password: params.get('auth') || '',
+                network: 'udp',
+                host: params.get('peer') || params.get('sni') || '',
+                path: '',
+                insecure: params.get('insecure') === '1',
+                sni: params.get('sni') || params.get('peer') || '',
+                alpn: params.get('alpn') || '',
+                upmbps: params.get('upmbps') || '',
+                downmbps: params.get('downmbps') || ''
             };
         }
     } catch (e) {
