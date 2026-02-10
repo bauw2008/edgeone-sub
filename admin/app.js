@@ -651,38 +651,17 @@ function parseLink(link) {
             const server = basicMatch[2];
             const port = parseInt(basicMatch[3]);
 
-            // 手动解析参数（处理 ? 后面的内容）
+            // 解析参数
             const questionIndex = link.indexOf('?');
             const params = {};
 
             if (questionIndex > 0) {
-                const hashIndex = link.lastIndexOf('#');
-                const endIndex = hashIndex > questionIndex ? hashIndex : link.length;
+                // 找到参数部分的结束位置（在最后一个 # 之前）
+                const endIndex = lastHashIndex > questionIndex ? lastHashIndex : link.length;
                 const queryString = link.substring(questionIndex + 1, endIndex);
 
-                // 分割参数（需要正确处理包含 # 的值）
-                const pairs = [];
-                let current = '';
-                let inParamValue = false;
-
-                for (let i = 0; i < queryString.length; i++) {
-                    const char = queryString[i];
-                    if (char === '&' && !inParamValue) {
-                        pairs.push(current);
-                        current = '';
-                    } else if (char === '=') {
-                        inParamValue = true;
-                        current += char;
-                    } else {
-                        current += char;
-                        // 如果遇到新的 &，且当前已经有完整的键值对
-                        if (char === '&') {
-                            inParamValue = false;
-                        }
-                    }
-                }
-                if (current) pairs.push(current);
-
+                // 简单按 & 分割参数
+                const pairs = queryString.split('&');
                 for (const pair of pairs) {
                     const eqIndex = pair.indexOf('=');
                     if (eqIndex > 0) {
