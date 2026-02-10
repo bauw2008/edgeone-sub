@@ -336,7 +336,7 @@ function generateToken(password) {
     return btoa(password + '_token_2024');
 }
 
-// 生成节点链接
+// 生成节点链接（与 admin/app.js LinkGenerator 保持一致）
 function generateLink(node) {
     switch (node.type) {
         case 'vmess': {
@@ -384,7 +384,7 @@ function generateLink(node) {
             if (node.sid) {
                 params.push(`sid=${encodeURIComponent(node.sid)}`);
             }
-            if (node.tls) {
+            if (node.tls && !node.security) {
                 params.push('security=tls');
             }
             return `vless://${node.password}@${node.server}:${node.port}?${params.join('&')}#${encodeURIComponent(node.name)}`;
@@ -405,14 +405,19 @@ function generateLink(node) {
             if (node.host) {
                 params.push(`host=${encodeURIComponent(node.host)}`);
             }
-            if (node.tls) {
+            if (node.sni) {
+                params.push(`sni=${encodeURIComponent(node.sni)}`);
+            }
+            if (!node.tls) {
+                params.push('security=tls');
+            } else {
                 params.push('security=tls');
             }
             const paramStr = params.length > 0 ? `?${params.join('&')}` : '';
             return `trojan://${node.password}@${node.server}:${node.port}${paramStr}#${encodeURIComponent(node.name)}`;
         }
-        case 'hysteria2':
-        case 'hy2': {
+        case 'hy2':
+        case 'hysteria2': {
             let params = [];
             if (node.insecure) {
                 params.push('insecure=1');
@@ -423,9 +428,10 @@ function generateLink(node) {
             const paramStr = params.length > 0 ? `/?${params.join('&')}` : '';
             return `hy2://${node.password}@${node.server}:${node.port}${paramStr}#${encodeURIComponent(node.name)}`;
         }
-        case 'hysteria':
-        case 'hy1': {
+        case 'hy1':
+        case 'hysteria': {
             let params = [];
+            // Hysteria1 使用 auth 参数传递密码
             if (node.password) {
                 params.push(`auth=${encodeURIComponent(node.password)}`);
             }

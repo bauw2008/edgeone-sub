@@ -119,7 +119,7 @@ function parseNodes(content) {
     return nodes;
 }
 
-// 解析单个链接
+// 解析单个链接（与 admin/app.js parseLink 保持一致）
 function parseLink(link) {
     try {
         // VMess
@@ -208,105 +208,44 @@ function parseLink(link) {
                 network: params.get('type') || 'tcp',
                 host: params.get('host') || '',
                 path: params.get('path') || '',
-                tls: params.get('security') === 'tls' || true
-            };
-        }
-
-        // Hysteria2
-        if (link.startsWith('hy2://') || link.startsWith('hysteria2://')) {
-            // hy2://password@server:port/?insecure=1&sni=xxx#name
-            const protocol = link.startsWith('hy2://') ? 'hy2://' : 'hysteria2://';
-            const linkWithoutProtocol = link.slice(protocol.length);
-            
-            // 分离查询参数和哈希
-            const hashIndex = linkWithoutProtocol.indexOf('#');
-            const pathAndQuery = hashIndex >= 0 ? linkWithoutProtocol.slice(0, hashIndex) : linkWithoutProtocol;
-            const hash = hashIndex >= 0 ? decodeURIComponent(linkWithoutProtocol.slice(hashIndex + 1)) : 'Hysteria2 Node';
-            
-            // 分离认证信息和路径
-            const atIndex = pathAndQuery.indexOf('@');
-            if (atIndex === -1) return null;
-            
-            const authPart = pathAndQuery.slice(0, atIndex);
-            const serverPart = pathAndQuery.slice(atIndex + 1);
-            
-            // 密码
-            const password = authPart || '';
-            
-            // 分离服务器和端口与查询参数（处理 / 路径）
-            const queryIndex = serverPart.indexOf('?');
-            const serverPortPath = queryIndex >= 0 ? serverPart.slice(0, queryIndex) : serverPart;
-            const queryString = queryIndex >= 0 ? serverPart.slice(queryIndex + 1) : '';
-            
-            // 移除路径部分，只保留 server:port
-            const slashIndex = serverPortPath.indexOf('/');
-            const serverAndPort = slashIndex >= 0 ? serverPortPath.slice(0, slashIndex) : serverPortPath;
-            
-            // 解析服务器和端口
-            const lastColon = serverAndPort.lastIndexOf(':');
-            if (lastColon === -1) return null;
-            const server = serverAndPort.slice(0, lastColon);
-            const port = parseInt(serverAndPort.slice(lastColon + 1)) || 443;
-            
-            // 解析查询参数
-            const params = new URLSearchParams(queryString);
-            
-            return {
-                name: hash || 'Hysteria2 Node',
-                type: 'hysteria2',
-                server,
-                port,
-                password,
-                network: 'udp',
-                host: params.get('sni') || '',
-                path: '',
-                insecure: params.get('insecure') === '1',
+                tls: params.get('security') === 'tls' || true,
                 sni: params.get('sni') || ''
             };
         }
 
         // Hysteria1
         if (link.startsWith('hysteria://')) {
-            // hysteria://server:port/?insecure=1&peer=xxx&auth=password&upmbps=100&downmbps=100&alpn=h3#name
-            const linkWithoutProtocol = link.slice('hysteria://'.length);
-            
-            // 分离查询参数和哈希
-            const hashIndex = linkWithoutProtocol.indexOf('#');
-            const pathAndQuery = hashIndex >= 0 ? linkWithoutProtocol.slice(0, hashIndex) : linkWithoutProtocol;
-            const hash = hashIndex >= 0 ? decodeURIComponent(linkWithoutProtocol.slice(hashIndex + 1)) : 'Hysteria Node';
-            
-            // 分离服务器和端口与查询参数（处理 / 路径）
-            const queryIndex = pathAndQuery.indexOf('?');
-            const serverPortPath = queryIndex >= 0 ? pathAndQuery.slice(0, queryIndex) : pathAndQuery;
-            const queryString = queryIndex >= 0 ? pathAndQuery.slice(queryIndex + 1) : '';
-            
-            // 移除路径部分，只保留 server:port
-            const slashIndex = serverPortPath.indexOf('/');
-            const serverAndPort = slashIndex >= 0 ? serverPortPath.slice(0, slashIndex) : serverPortPath;
-            
-            // 解析服务器和端口
-            const lastColon = serverAndPort.lastIndexOf(':');
-            if (lastColon === -1) return null;
-            const server = serverAndPort.slice(0, lastColon);
-            const port = parseInt(serverAndPort.slice(lastColon + 1)) || 443;
-            
-            // 解析查询参数
-            const params = new URLSearchParams(queryString);
-            
+            const url = new URL(link);
+            const params = new URLSearchParams(url.search);
             return {
-                name: hash || 'Hysteria Node',
-                type: 'hysteria',
-                server,
-                port,
-                password: params.get('auth') || '',
-                network: 'udp',
-                host: params.get('peer') || params.get('sni') || '',
-                path: '',
-                insecure: params.get('insecure') === '1',
-                sni: params.get('sni') || params.get('peer') || '',
-                alpn: params.get('alpn') || '',
+                name: decodeURIComponent(url.hash.slice(1)) || 'Hysteria1 Node',
+                type: 'hy1',
+                server: url.hostname,
+                port: parseInt(url.port) || 443,
+                password: url.username,
+                protocol: params.get('protocol') || 'udp',
+                obfs: params.get('obfs') || 'plain',
+                auth: params.get('auth') || '',
+                insecure: params.get('peer') ? true : false,
+                sni: params.get('peer') || params.get('sni') || '',
                 upmbps: params.get('upmbps') || '',
-                downmbps: params.get('downmbps') || ''
+                downmbps: params.get('downmbps') || '',
+                alpn: params.get('alpn') || ''
+            };
+        }
+
+        // Hysteria2
+        if (link.startsWith('hy2://') || link.startsWith('hysteria2://')) {
+            const url = new URL(link);
+            const params = new URLSearchParams(url.search);
+            return {
+                name: decodeURIComponent(url.hash.slice(1)) || 'Hysteria2 Node',
+                type: 'hy2',
+                server: url.hostname,
+                port: parseInt(url.port) || 443,
+                password: url.username,
+                sni: params.get('sni') || params.get('peer') || '',
+                insecure: params.get('insecure') === '1'
             };
         }
     } catch (e) {
