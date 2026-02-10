@@ -154,7 +154,13 @@ function parseLink(link) {
                 network: params.get('type') || 'tcp',
                 host: params.get('host') || '',
                 path: params.get('path') || '',
-                tls: params.get('security') === 'tls'
+                tls: params.get('security') === 'tls',
+                sni: params.get('sni') || '',
+                flow: params.get('flow') || '',
+                fp: params.get('fp') || '',
+                security: params.get('security') || '',
+                pbk: params.get('pbk') || '',
+                sid: params.get('sid') || ''
             };
         }
 
