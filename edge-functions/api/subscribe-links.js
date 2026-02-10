@@ -454,32 +454,9 @@ function parseLink(link) {
             let name = 'VLESS Node';
 
             if (questionIndex > 0) {
-                // 检查最后一个 # 是否是节点名称
-                const lastHashIndex = link.lastIndexOf('#');
-                if (lastHashIndex > 0) {
-                    const beforeHash = link.substring(0, lastHashIndex);
-                    const fragment = link.substring(lastHashIndex + 1);
-                    
-                    // 判断 # 后面是否是节点名称：
-                    // 如果 # 前面最近的是 =，且 # 后面不包含 =，则 # 后面是参数值
-                    // 否则 # 后面是节点名称
-                    const lastEqIndex = beforeHash.lastIndexOf('=');
-                    const lastAmpersandIndex = beforeHash.lastIndexOf('&');
-                    const questionPos = beforeHash.indexOf('?');
-                    
-                    // 如果最后一个 = 在最后一个 & 之后，且最后一个 & 在 ? 之后
-                    // 说明 # 后面是节点名称
-                    const isFragment = lastEqIndex > lastAmpersandIndex && lastAmpersandIndex >= questionPos;
-                    
-                    if (isFragment) {
-                        name = decodeURIComponent(fragment);
-                        queryString = link.substring(questionIndex + 1, lastHashIndex);
-                    } else {
-                        queryString = link.substring(questionIndex + 1);
-                    }
-                } else {
-                    queryString = link.substring(questionIndex + 1);
-                }
+                // 对于非标准 VLESS 链接（参数值中包含 #），直接解析到末尾
+                // 不处理 fragment，因为无法可靠区分节点名称和参数值中的 #
+                queryString = link.substring(questionIndex + 1);
             }
 
             // 解析参数

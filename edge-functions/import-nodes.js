@@ -153,36 +153,19 @@ function parseLink(link) {
 
             // 提取参数字符串和节点名称
             const questionIndex = link.indexOf('?');
+            const hashIndex = link.lastIndexOf('#');
             let queryString = '';
             let name = 'VLESS Node';
 
+            // 提取节点名称（# 后面的部分）
+            if (hashIndex > 0) {
+                name = decodeURIComponent(link.substring(hashIndex + 1));
+            }
+
             if (questionIndex > 0) {
-                // 检查最后一个 # 是否是节点名称
-                const lastHashIndex = link.lastIndexOf('#');
-                if (lastHashIndex > 0) {
-                    const beforeHash = link.substring(0, lastHashIndex);
-                    const fragment = link.substring(lastHashIndex + 1);
-                    
-                    // 判断 # 后面是否是节点名称：
-                    // 如果 # 前面最近的是 =，且 # 后面不包含 =，则 # 后面是参数值
-                    // 否则 # 后面是节点名称
-                    const lastEqIndex = beforeHash.lastIndexOf('=');
-                    const lastAmpersandIndex = beforeHash.lastIndexOf('&');
-                    const questionPos = beforeHash.indexOf('?');
-                    
-                    // 如果最后一个 = 在最后一个 & 之后，且最后一个 & 在 ? 之后
-                    // 说明 # 后面是节点名称
-                    const isFragment = lastEqIndex > lastAmpersandIndex && lastAmpersandIndex >= questionPos;
-                    
-                    if (isFragment) {
-                        name = decodeURIComponent(fragment);
-                        queryString = link.substring(questionIndex + 1, lastHashIndex);
-                    } else {
-                        queryString = link.substring(questionIndex + 1);
-                    }
-                } else {
-                    queryString = link.substring(questionIndex + 1);
-                }
+                // 参数在 ? 和 # 之间（如果有 #）或到末尾
+                const endIndex = hashIndex > questionIndex ? hashIndex : link.length;
+                queryString = link.substring(questionIndex + 1, endIndex);
             }
 
             // 解析参数
