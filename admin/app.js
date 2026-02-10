@@ -416,9 +416,36 @@ function openModal(id = null) {
         document.getElementById('nodeServer').value = n.server;
         document.getElementById('nodePort').value = n.port;
         document.getElementById('nodePassword').value = n.password;
+        document.getElementById('nodeNetwork').value = n.network || 'tcp';
+        document.getElementById('nodeTls').checked = n.tls || false;
+        document.getElementById('nodePath').value = n.path || '';
+        document.getElementById('nodeHost').value = n.host || '';
+        document.getElementById('nodeAid').value = n.aid || '0';
+        document.getElementById('nodeSecurity').value = n.security || 'auto';
+        // VLESS 字段
+        document.getElementById('nodeSni').value = n.sni || '';
+        document.getElementById('nodeFlow').value = n.flow || '';
+        document.getElementById('nodeFp').value = n.fp || '';
+        document.getElementById('nodeVlessSecurity').value = n.security || '';
+        document.getElementById('nodePbk').value = n.pbk || '';
+        document.getElementById('nodeSid').value = n.sid || '';
+        // Trojan 字段
+        document.getElementById('nodeTrojanSni').value = n.sni || '';
+        document.getElementById('nodeAllowInsecure').checked = n.allowInsecure || false;
+        // Hysteria 字段
+        document.getElementById('nodeHyInsecure').checked = n.insecure || false;
+        document.getElementById('nodeUpmbps').value = n.upmbps || '';
+        document.getElementById('nodeDownmbps').value = n.downmbps || '';
+        document.getElementById('nodeAlpn').value = n.alpn || '';
+        document.getElementById('nodeHy2Sni').value = n.sni || '';
+        document.getElementById('nodeHy2Insecure').checked = n.insecure || false;
+        
+        // 触发类型切换以显示正确的字段
+        document.getElementById('nodeType').dispatchEvent(new Event('change'));
     } else {
         document.getElementById('nodeForm').reset();
         document.getElementById('nodeId').value = '';
+        document.getElementById('nodeType').dispatchEvent(new Event('change'));
     }
 }
 
@@ -434,14 +461,85 @@ async function saveNode(e) {
         server: document.getElementById('nodeServer').value,
         port: parseInt(document.getElementById('nodePort').value),
         password: document.getElementById('nodePassword').value,
-        // 额外字段
+        // 基本字段
         network: document.getElementById('nodeNetwork')?.value || 'tcp',
         tls: document.getElementById('nodeTls')?.checked || false,
         path: document.getElementById('nodePath')?.value || '',
         host: document.getElementById('nodeHost')?.value || '',
         aid: parseInt(document.getElementById('nodeAid')?.value || '0'),
-        security: document.getElementById('nodeSecurity')?.value || 'auto'
+        security: document.getElementById('nodeSecurity')?.value || 'auto',
+        // VLESS Reality 字段
+        sni: document.getElementById('nodeSni')?.value || '',
+        flow: document.getElementById('nodeFlow')?.value || '',
+        fp: document.getElementById('nodeFp')?.value || '',
+        // 注意：这里用不同的字段名避免冲突
+        vlessSecurity: document.getElementById('nodeVlessSecurity')?.value || '',
+        pbk: document.getElementById('nodePbk')?.value || '',
+        sid: document.getElementById('nodeSid')?.value || '',
+        // Trojan 字段
+        trojanSni: document.getElementById('nodeTrojanSni')?.value || '',
+        allowInsecure: document.getElementById('nodeAllowInsecure')?.checked || false,
+        // Hysteria 字段
+        hyInsecure: document.getElementById('nodeHyInsecure')?.checked || false,
+        upmbps: document.getElementById('nodeUpmbps')?.value || '',
+        downmbps: document.getElementById('nodeDownmbps')?.value || '',
+        alpn: document.getElementById('nodeAlpn')?.value || '',
+        hy2Sni: document.getElementById('nodeHy2Sni')?.value || '',
+        hy2Insecure: document.getElementById('nodeHy2Insecure')?.checked || false
     };
+    
+    // 根据类型清理字段
+    if (data.type === 'vless') {
+        data.security = data.vlessSecurity;
+        data.sni = data.sni || data.trojanSni || data.hy2Sni || '';
+        delete data.vlessSecurity;
+        delete data.trojanSni;
+        delete data.hy2Sni;
+        delete data.hy2Insecure;
+    } else if (data.type === 'trojan') {
+        data.sni = data.trojanSni || data.sni || data.hy2Sni || '';
+        delete data.vlessSecurity;
+        delete data.trojanSni;
+        delete data.pbk;
+        delete data.sid;
+        delete data.flow;
+        delete data.fp;
+        delete data.hy2Sni;
+        delete data.hy2Insecure;
+        delete data.hyInsecure;
+        delete data.upmbps;
+        delete data.downmbps;
+        delete data.alpn;
+    } else if (data.type === 'hy1') {
+        data.insecure = data.hyInsecure;
+        delete data.vlessSecurity;
+        delete data.trojanSni;
+        delete data.pbk;
+        delete data.sid;
+        delete data.flow;
+        delete data.fp;
+        delete data.hy2Sni;
+        delete data.hy2Insecure;
+        delete data.hyInsecure;
+        delete data.allowInsecure;
+    } else if (data.type === 'hy2') {
+        data.sni = data.hy2Sni || data.sni || data.trojanSni || '';
+        data.insecure = data.hy2Insecure;
+        delete data.vlessSecurity;
+        delete data.trojanSni;
+        delete data.pbk;
+        delete data.sid;
+        delete data.flow;
+        delete data.fp;
+        delete data.hy2Sni;
+        delete data.hy2Insecure;
+        delete data.hyInsecure;
+        delete data.allowInsecure;
+        delete data.upmbps;
+        delete data.downmbps;
+        delete data.alpn;
+    }
+    
     const id = document.getElementById('nodeId').value;
     const success = id ? await NodeManager.update(id, data) : await NodeManager.add(data);
     if (success) {
