@@ -440,16 +440,6 @@ function parseLink(link) {
 
 // VLESS 链接解析
         if (link.startsWith('vless://')) {
-            // 提取节点名称（最后一个 # 后面的内容，且不包含 =）
-            let name = 'VLESS Node';
-            const lastHashIndex = link.lastIndexOf('#');
-            if (lastHashIndex > 0) {
-                const fragment = link.substring(lastHashIndex + 1);
-                if (fragment.indexOf('=') === -1) {
-                    name = decodeURIComponent(fragment);
-                }
-            }
-
             // 提取基本信息
             const basicMatch = link.match(/^vless:\/\/([^@]+)@([^:]+):(\d+)/);
             if (!basicMatch) return null;
@@ -458,14 +448,27 @@ function parseLink(link) {
             const server = basicMatch[2];
             const port = parseInt(basicMatch[3]);
 
+            // 提取节点名称和判断参数结束位置
+            let name = 'VLESS Node';
+            let paramsEndIndex = link.length;
+            const lastHashIndex = link.lastIndexOf('#');
+
+            if (lastHashIndex > 0) {
+                const fragment = link.substring(lastHashIndex + 1);
+                // 只有当 # 后面不包含 = 时，才是节点名称
+                if (fragment.indexOf('=') === -1) {
+                    name = decodeURIComponent(fragment);
+                    paramsEndIndex = lastHashIndex;
+                }
+                // 如果 # 后面包含 =，说明是参数值的一部分，不作为结束位置
+            }
+
             // 解析参数
             const questionIndex = link.indexOf('?');
             const params = {};
 
             if (questionIndex > 0) {
-                // 找到参数部分的结束位置（在最后一个 # 之前）
-                const endIndex = lastHashIndex > questionIndex ? lastHashIndex : link.length;
-                const queryString = link.substring(questionIndex + 1, endIndex);
+                const queryString = link.substring(questionIndex + 1, paramsEndIndex);
 
                 // 简单按 & 分割参数
                 const pairs = queryString.split('&');
