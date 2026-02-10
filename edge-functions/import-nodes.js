@@ -45,14 +45,40 @@ export async function onRequestGet(context) {
             }
         }
 
-        // 导入到 KV
-        let imported = 0;
+        // 获取现有节点数据
+        const existingData = await NODES_KV.get('nodes_data');
+        const existingNodes = existingData ? JSON.parse(existingData) : [];
+
+        // 合并新节点
+        const mergedNodes = [...existingNodes];
+        const seen = new Set(existingNodes.map(n => `${n.type}-${n.server}-${n.port}`));
+
         for (const node of uniqueNodes) {
-            const id = crypto.randomUUID();
-            const nodeData = { ...node, id, created: Date.now() };
-            await NODES_KV.put(`node:${id}`, JSON.stringify(nodeData));
-            imported++;
+            const key = `${node.type}-${node.server}-${node.port}`;
+            if (!seen.has(key)) {
+                const id = crypto.randomUUID();
+                const nodeData = {
+                    ...node,
+                    id,
+                    created_at: Date.now(),
+                    updated_at: Date.now()
+                };
+                mergedNodes.push(nodeData);
+                seen.add(key);
+            }
         }
+
+        // 保存聚合数据
+        await NODES_KV.put('nodes_data', JSON.stringify(mergedNodes));
+
+        const result = {
+            success: true,
+            imported: uniqueNodes.length,
+            total: allNodes.length,
+            unique: uniqueNodes.length,
+            existing: existingNodes.length,
+            merged: mergedNodes.length
+        };
 
         const result = {
             success: true,
