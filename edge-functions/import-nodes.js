@@ -224,13 +224,17 @@ function parseLink(link) {
             const authPart = pathAndQuery.slice(0, atIndex);
             const serverPart = pathAndQuery.slice(atIndex + 1);
             
-            // 分离密码和认证信息（可能为空）
+            // 密码
             const password = authPart || '';
             
-            // 分离服务器和端口与查询参数
+            // 分离服务器和端口与查询参数（处理 / 路径）
             const queryIndex = serverPart.indexOf('?');
-            const serverAndPort = queryIndex >= 0 ? serverPart.slice(0, queryIndex) : serverPart;
+            const serverPortPath = queryIndex >= 0 ? serverPart.slice(0, queryIndex) : serverPart;
             const queryString = queryIndex >= 0 ? serverPart.slice(queryIndex + 1) : '';
+            
+            // 移除路径部分，只保留 server:port
+            const slashIndex = serverPortPath.indexOf('/');
+            const serverAndPort = slashIndex >= 0 ? serverPortPath.slice(0, slashIndex) : serverPortPath;
             
             // 解析服务器和端口
             const lastColon = serverAndPort.lastIndexOf(':');
@@ -265,10 +269,14 @@ function parseLink(link) {
             const pathAndQuery = hashIndex >= 0 ? linkWithoutProtocol.slice(0, hashIndex) : linkWithoutProtocol;
             const hash = hashIndex >= 0 ? decodeURIComponent(linkWithoutProtocol.slice(hashIndex + 1)) : 'Hysteria Node';
             
-            // 分离服务器和端口与查询参数
+            // 分离服务器和端口与查询参数（处理 / 路径）
             const queryIndex = pathAndQuery.indexOf('?');
-            const serverAndPort = queryIndex >= 0 ? pathAndQuery.slice(0, queryIndex) : pathAndQuery;
+            const serverPortPath = queryIndex >= 0 ? pathAndQuery.slice(0, queryIndex) : pathAndQuery;
             const queryString = queryIndex >= 0 ? pathAndQuery.slice(queryIndex + 1) : '';
+            
+            // 移除路径部分，只保留 server:port
+            const slashIndex = serverPortPath.indexOf('/');
+            const serverAndPort = slashIndex >= 0 ? serverPortPath.slice(0, slashIndex) : serverPortPath;
             
             // 解析服务器和端口
             const lastColon = serverAndPort.lastIndexOf(':');
