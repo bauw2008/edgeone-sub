@@ -438,15 +438,37 @@ function parseLink(link) {
             };
         }
 
-        // VLESS 链接解析
+// VLESS 链接解析
         if (link.startsWith('vless://')) {
-            // 移除 URL fragment (# 及后面的内容)，避免影响 URL 解析
-            const linkWithoutFragment = link.split('#')[0];
+            // 智能处理 fragment：只有在 # 后面跟着的是可读的名称时才视为 fragment
+            // 如果 # 在 & 后面且参数中没有明确的 name，那可能是参数值的一部分
+            let name = 'VLESS Node';
+            let linkWithoutFragment = link;
+
+            // 检查是否包含 fragment，且 fragment 不是参数值的一部分
+            const hashIndex = link.indexOf('#', 8); // 从 vless:// 之后开始查找
+            if (hashIndex > 0) {
+                // 检查 # 前面是否有 = (参数分隔符)
+                const beforeHash = link.substring(0, hashIndex);
+                const lastEqualsIndex = beforeHash.lastIndexOf('=');
+                const lastAmpersandIndex = beforeHash.lastIndexOf('&');
+
+                // 如果 # 前面最近的是 & 或 ?，说明这是参数值的一部分，不是 fragment
+                // 如果 # 前面最近的是 =，说明这是 fragment（节点名称）
+                const isFragment = lastEqualsIndex > lastAmpersandIndex && lastAmpersandIndex >= 0;
+
+                if (isFragment) {
+                    linkWithoutFragment = link.substring(0, hashIndex);
+                    const fragment = link.substring(hashIndex + 1);
+                    if (fragment && fragment.length > 0 && fragment.indexOf('=') === -1) {
+                        name = decodeURIComponent(fragment);
+                    }
+                }
+            }
+
             const url = new URL(linkWithoutFragment);
             const params = new URLSearchParams(url.search);
-            // 从原始链接中提取 name
-            const nameMatch = link.match(/#(.+)$/);
-            const name = nameMatch ? decodeURIComponent(nameMatch[1]) : 'VLESS Node';
+
             return {
                 name: name,
                 type: 'vless',
@@ -486,10 +508,15 @@ function parseLink(link) {
                         const decoded = base64Decode(url.username);
                         const parts = decoded.split(':');
                         if (parts.length >= 2) {
+                            // 处理 IPv6 地址，去掉方括号
+                            let server = url.hostname;
+                            if (server.startsWith('[') && server.endsWith(']')) {
+                                server = server.slice(1, -1);
+                            }
                             return {
                                 name: name,
                                 type: 'ss',
-                                server: url.hostname,
+                                server: server,
                                 port: parseInt(url.port) || 8388,
                                 password: parts.slice(1).join(':'),
                                 security: parts[0]

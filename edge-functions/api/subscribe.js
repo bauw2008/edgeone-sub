@@ -181,7 +181,9 @@ function generateLink(node) {
         case 'ss': {
             const method = node.security || 'aes-256-gcm';
             const auth = base64Encode(`${method}:${node.password}`);
-            return `ss://${auth}@${node.server}:${node.port}#${encodeURIComponent(node.name)}`;
+            // 处理 IPv6 地址
+            const server = node.server.includes(':') ? `[${node.server}]` : node.server;
+            return `ss://${auth}@${server}:${node.port}#${encodeURIComponent(node.name)}`;
         }
         case 'trojan': {
             let params = [];

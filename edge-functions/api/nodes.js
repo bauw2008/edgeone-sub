@@ -128,19 +128,48 @@ export async function onRequestPost(context) {
         // 批量导入
         if (Array.isArray(data)) {
             const results = [];
-                    for (const node of data) {
-                        const id = crypto.randomUUID();
-                        const nodeData = {
-                            id,
-                            ...node,
-                            created_at: now,
-                            updated_at: now
-                        };
-                        nodes.push(nodeData);
-                        results.push(nodeData);
-                    }
-                    // 保存聚合数据
-                    await kv.put(NODES_DATA_KEY, JSON.stringify(nodes));            // 清除订阅缓存
+            // 创建已存在节点的 Set，用于快速查找
+            const existingKeys = new Set();
+            for (const existingNode of nodes) {
+                const key = `${existingNode.type}-${existingNode.server}-${existingNode.port}`;
+                existingKeys.add(key);
+            }
+
+            for (const node of data) {
+                const key = `${node.type}-${node.server}-${node.port}`;
+                // 查找是否已存在
+                const existingIndex = nodes.findIndex(n =>
+                    n.type === node.type &&
+                    n.server === node.server &&
+                    n.port === node.port
+                );
+
+                if (existingIndex >= 0) {
+                    // 已存在，更新节点
+                    nodes[existingIndex] = {
+                        ...nodes[existingIndex],
+                        ...node,
+                        id: nodes[existingIndex].id,
+                        created_at: nodes[existingIndex].created_at,
+                        updated_at: now
+                    };
+                    results.push(nodes[existingIndex]);
+                } else {
+                    // 不存在，添加新节点
+                    const id = crypto.randomUUID();
+                    const nodeData = {
+                        id,
+                        ...node,
+                        created_at: now,
+                        updated_at: now
+                    };
+                    nodes.push(nodeData);
+                    results.push(nodeData);
+                }
+            }
+            // 保存聚合数据
+            await kv.put(NODES_DATA_KEY, JSON.stringify(nodes));
+            // 清除订阅缓存
             await clearSubscribeCache(env);
             return new Response(JSON.stringify({ success: true, imported: results.length, nodes: results }), {
                 status: 201,
@@ -393,7 +422,9 @@ function generateLink(node) {
         case 'ss': {
             const method = node.security || 'aes-256-gcm';
             const auth = base64Encode(`${method}:${node.password}`);
-            return `ss://${auth}@${node.server}:${node.port}#${encodeURIComponent(node.name)}`;
+            // 处理 IPv6 地址
+            const server = node.server.includes(':') ? `[${node.server}]` : node.server;
+            return `ss://${auth}@${server}:${node.port}#${encodeURIComponent(node.name)}`;
         }
         case 'trojan': {
             let params = [];
