@@ -633,40 +633,82 @@ function parseLink(link) {
         
         // VLESS 链接解析
         if (link.startsWith('vless://')) {
-            // 提取节点名称（最后一个 # 后面的内容）
+            // 提取节点名称（最后一个 # 后面的内容，且不包含 =）
             let name = 'VLESS Node';
             const lastHashIndex = link.lastIndexOf('#');
-            let linkWithoutFragment = link;
-
             if (lastHashIndex > 0) {
                 const fragment = link.substring(lastHashIndex + 1);
-                // 只有当 fragment 不包含 = 时，才认为是节点名称
-                // 如果包含 =，说明这是参数值的一部分（如 sid=#JP-KDDI-）
                 if (fragment.indexOf('=') === -1) {
                     name = decodeURIComponent(fragment);
-                    linkWithoutFragment = link.substring(0, lastHashIndex);
                 }
             }
 
-            const url = new URL(linkWithoutFragment);
-            const params = new URLSearchParams(url.search);
+            // 提取基本信息
+            const basicMatch = link.match(/^vless:\/\/([^@]+)@([^:]+):(\d+)/);
+            if (!basicMatch) return null;
+
+            const password = basicMatch[1];
+            const server = basicMatch[2];
+            const port = parseInt(basicMatch[3]);
+
+            // 手动解析参数（处理 ? 后面的内容）
+            const questionIndex = link.indexOf('?');
+            const params = {};
+
+            if (questionIndex > 0) {
+                const hashIndex = link.lastIndexOf('#');
+                const endIndex = hashIndex > questionIndex ? hashIndex : link.length;
+                const queryString = link.substring(questionIndex + 1, endIndex);
+
+                // 分割参数（需要正确处理包含 # 的值）
+                const pairs = [];
+                let current = '';
+                let inParamValue = false;
+
+                for (let i = 0; i < queryString.length; i++) {
+                    const char = queryString[i];
+                    if (char === '&' && !inParamValue) {
+                        pairs.push(current);
+                        current = '';
+                    } else if (char === '=') {
+                        inParamValue = true;
+                        current += char;
+                    } else {
+                        current += char;
+                        // 如果遇到新的 &，且当前已经有完整的键值对
+                        if (char === '&') {
+                            inParamValue = false;
+                        }
+                    }
+                }
+                if (current) pairs.push(current);
+
+                for (const pair of pairs) {
+                    const eqIndex = pair.indexOf('=');
+                    if (eqIndex > 0) {
+                        const key = pair.substring(0, eqIndex);
+                        const value = decodeURIComponent(pair.substring(eqIndex + 1));
+                        params[key] = value;
+                    }
+                }
+            }
 
             return {
                 name: name,
                 type: 'vless',
-                server: url.hostname,
-                port: parseInt(url.port) || 443,
-                password: url.username,
-                network: params.get('type') || 'tcp',
-                host: params.get('host') || '',
-                path: params.get('path') || '',
-                tls: params.get('security') === 'tls',
-                sni: params.get('sni') || '',
-                flow: params.get('flow') || '',
-                fp: params.get('fp') || '',
-                security: params.get('security') || '',
-                pbk: params.get('pbk') || '',
-                sid: params.get('sid') || ''
+                server: server,
+                port: port,
+                password: password,
+                network: params['type'] || 'tcp',
+                host: params['host'] || '',
+                path: params['path'] || '',
+                tls: params['security'] === 'tls',
+                sni: params['sni'] || '',
+                flow: params['flow'] || '',
+                fp: params['fp'] || '',
+                security: params['security'] || '',
+                pbk: params['pbk'] || '',
+                sid: params['sid'] || ''
             };
         }
         
