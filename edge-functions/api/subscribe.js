@@ -169,7 +169,7 @@ function generateLink(node) {
             if (node.pbk) {
                 params.push(`pbk=${encodeURIComponent(node.pbk)}`);
             }
-            if (node.sid) {
+            if (node.sid !== undefined) {
                 params.push(`sid=${encodeURIComponent(node.sid)}`);
             }
             if (node.tls && !node.security) {
