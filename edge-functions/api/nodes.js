@@ -357,7 +357,7 @@ function generateLink(node) {
         }
         case 'vless': {
             let params = ['encryption=none'];
-            if (node.network && node.network !== 'tcp') {
+            if (node.network) {
                 params.push(`type=${node.network}`);
             }
             if (node.path) {

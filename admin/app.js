@@ -292,7 +292,7 @@ const LinkGenerator = {
     
     vless(node) {
         let params = ['encryption=none'];
-        if (node.network && node.network !== 'tcp') {
+        if (node.network) {
             params.push(`type=${node.network}`);
         }
         if (node.path) {
@@ -631,10 +631,15 @@ function parseLink(link) {
         
         // VLESS 链接解析
         if (link.startsWith('vless://')) {
-            const url = new URL(link);
+            // 移除 URL fragment (# 及后面的内容)，避免影响 URL 解析
+            const linkWithoutFragment = link.split('#')[0];
+            const url = new URL(linkWithoutFragment);
             const params = new URLSearchParams(url.search);
+            // 从原始链接中提取 name
+            const nameMatch = link.match(/#(.+)$/);
+            const name = nameMatch ? decodeURIComponent(nameMatch[1]) : 'VLESS Node';
             return {
-                name: decodeURIComponent(url.hash.slice(1)) || 'VLESS Node',
+                name: name,
                 type: 'vless',
                 server: url.hostname,
                 port: parseInt(url.port) || 443,
