@@ -144,6 +144,12 @@ function generateLink(node) {
             return 'vmess://' + base64Encode(JSON.stringify(config));
         }
         case 'vless': {
+            // 如果有原始查询字符串，直接使用以保持参数顺序和空值
+            if (node._rawQuery !== undefined) {
+                const paramStr = node._rawQuery ? `/?${node._rawQuery}` : '';
+                return `vless://${node.password}@${node.server}:${node.port}${paramStr}#${encodeURIComponent(node.name)}`;
+            }
+
             let params = ['encryption=none'];
             if (node.network) {
                 params.push(`type=${node.network}`);
@@ -210,6 +216,12 @@ function generateLink(node) {
         }
         case 'hy2':
         case 'hysteria2': {
+            // 如果有原始查询字符串，直接使用以保持参数顺序和空值
+            if (node._rawQuery !== undefined) {
+                const paramStr = node._rawQuery ? `/?${node._rawQuery}` : '';
+                return `hy2://${node.password}@${node.server}:${node.port}${paramStr}#${encodeURIComponent(node.name)}`;
+            }
+
             let params = [];
             if (node.insecure) {
                 params.push('insecure=1');
@@ -222,6 +234,12 @@ function generateLink(node) {
         }
         case 'hy1':
         case 'hysteria': {
+            // 如果有原始查询字符串，直接使用以保持参数顺序和空值
+            if (node._rawQuery !== undefined) {
+                const paramStr = node._rawQuery ? `/?${node._rawQuery}` : '';
+                return `hysteria://${node.server}:${node.port}${paramStr}#${encodeURIComponent(node.name)}`;
+            }
+
             let params = [];
             // Hysteria1 使用 auth 参数传递密码
             if (node.password) {

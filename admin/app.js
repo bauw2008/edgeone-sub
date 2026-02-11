@@ -291,6 +291,13 @@ const LinkGenerator = {
     },
     
     vless(node) {
+        // 如果有原始查询字符串，直接使用以保持参数顺序和空值
+        if (node._rawQuery !== undefined) {
+            const paramStr = node._rawQuery ? `/?${node._rawQuery}` : '';
+            return `vless://${node.password}@${node.server}:${node.port}${paramStr}#${encodeURIComponent(node.name)}`;
+        }
+
+        // 否则使用字段重新构建
         let params = ['encryption=none'];
         if (node.network) {
             params.push(`type=${node.network}`);
@@ -360,6 +367,12 @@ const LinkGenerator = {
     },
     
     hy1(node) {
+        // 如果有原始查询字符串，直接使用以保持参数顺序和空值
+        if (node._rawQuery !== undefined) {
+            const paramStr = node._rawQuery ? `/?${node._rawQuery}` : '';
+            return `hysteria://${node.server}:${node.port}${paramStr}#${encodeURIComponent(node.name)}`;
+        }
+
         let params = [];
         if (node.password) {
             params.push(`auth=${encodeURIComponent(node.password)}`);
@@ -384,12 +397,24 @@ const LinkGenerator = {
     },
     
     hy2(node) {
+        // 如果有原始查询字符串，直接使用以保持参数顺序和空值
+        if (node._rawQuery !== undefined) {
+            const paramStr = node._rawQuery ? `/?${node._rawQuery}` : '';
+            return `hy2://${node.password}@${node.server}:${node.port}${paramStr}#${encodeURIComponent(node.name)}`;
+        }
+
         let params = [];
         if (node.insecure) {
             params.push('insecure=1');
         }
         if (node.sni) {
             params.push(`sni=${encodeURIComponent(node.sni)}`);
+        }
+        if (node.obfs) {
+            params.push(`obfs=${encodeURIComponent(node.obfs)}`);
+        }
+        if (node['obfs-password']) {
+            params.push(`obfs-password=${encodeURIComponent(node['obfs-password'])}`);
         }
         const paramStr = params.length > 0 ? `/?${params.join('&')}` : '';
         return `hy2://${node.password}@${node.server}:${node.port}${paramStr}#${encodeURIComponent(node.name)}`;
@@ -660,6 +685,9 @@ function parseLink(link) {
 
             // 解析参数
             const params = {};
+            // 保留原始查询字符串，用于重新生成链接时保持顺序和完整性
+            const rawQueryString = queryString;
+
             if (queryString) {
                 const pairs = queryString.split('&');
                 for (const pair of pairs) {
@@ -668,6 +696,9 @@ function parseLink(link) {
                         const key = pair.substring(0, eqIndex);
                         const value = decodeURIComponent(pair.substring(eqIndex + 1));
                         params[key] = value;
+                    } else if (pair) {
+                        // 处理没有值的参数（如 flow=）
+                        params[pair] = '';
                     }
                 }
             }
@@ -683,11 +714,13 @@ function parseLink(link) {
                 path: params['path'] || '',
                 tls: params['security'] === 'tls',
                 sni: params['sni'] || '',
-                flow: params['flow'] || '',
+                flow: params['flow'] !== undefined ? params['flow'] : '',
                 fp: params['fp'] || '',
                 security: params['security'] || '',
                 pbk: params['pbk'] || '',
-                sid: params['sid'] || ''
+                sid: params['sid'] || '',
+                // 保留原始查询字符串以兼容某些客户端对参数顺序的要求
+                _rawQuery: rawQueryString
             };
         }
         
@@ -807,6 +840,10 @@ function parseLink(link) {
         if (link.startsWith('hysteria://')) {
             const url = new URL(link);
             const params = new URLSearchParams(url.search);
+
+            // 保留原始查询字符串
+            const rawQueryString = url.search.slice(1); // 移除开头的 ?
+
             return {
                 name: decodeURIComponent(url.hash.slice(1)) || 'Hysteria1 Node',
                 type: 'hy1',
@@ -819,7 +856,9 @@ function parseLink(link) {
                 sni: params.get('peer') || params.get('sni') || '',
                 upmbps: params.get('upmbps') || '',
                 downmbps: params.get('downmbps') || '',
-                alpn: params.get('alpn') || ''
+                alpn: params.get('alpn') || '',
+                // 保留原始查询字符串以兼容某些客户端对参数顺序的要求
+                _rawQuery: rawQueryString
             };
         }
 
@@ -827,6 +866,10 @@ function parseLink(link) {
         if (link.startsWith('hy2://') || link.startsWith('hysteria2://')) {
             const url = new URL(link);
             const params = new URLSearchParams(url.search);
+
+            // 保留原始查询字符串
+            const rawQueryString = url.search.slice(1); // 移除开头的 ?
+
             return {
                 name: decodeURIComponent(url.hash.slice(1)) || 'Hysteria2 Node',
                 type: 'hy2',
@@ -834,7 +877,12 @@ function parseLink(link) {
                 port: parseInt(url.port) || 443,
                 password: url.username,
                 sni: params.get('sni') || params.get('peer') || '',
-                insecure: params.get('insecure') === '1'
+                insecure: params.get('insecure') === '1',
+                // 保存所有可能的 HY2 参数
+                obfs: params.get('obfs') || '',
+                'obfs-password': params.get('obfs-password') || '',
+                // 保留原始查询字符串以兼容某些客户端对参数顺序的要求
+                _rawQuery: rawQueryString
             };
         }
     } catch (e) {
